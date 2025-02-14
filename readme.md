@@ -12,7 +12,7 @@ cargo add powerfx
 
 ## Status
 
-This library is still an an alpha status.  The following functions have been implemented:
+This library is still in an alpha status.  The following functions have been implemented:
 
 - Table
 - First
