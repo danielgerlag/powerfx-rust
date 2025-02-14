@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::{Arc, RwLock}};
 
-use crate::{evaluator::{ExpressionEvaluationContext, EvaluationError}, ast::Expression, models::DataValue};
+use crate::{evaluator::{Session, EvaluationError}, ast::Expression, models::DataValue};
 
 
 pub enum Function {
@@ -8,7 +8,7 @@ pub enum Function {
 }
 
 pub trait ScalarFunction: Send + Sync {
-  fn call(&self, context: &ExpressionEvaluationContext, args: &Vec<Expression>) -> Result<DataValue, EvaluationError>;
+  fn call(&self, context: &mut Session, args: &Vec<Expression>) -> Result<DataValue, EvaluationError>;
 }
 
 pub struct FunctionRegistry {

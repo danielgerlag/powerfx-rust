@@ -35,15 +35,35 @@ impl MyToString for GlobalVariables {
 }
 
 #[derive(Debug, Clone)]
-pub struct ExpressionEvaluationContext {
+pub struct Session {
   variables: GlobalVariables,
   
 }
 
-impl ExpressionEvaluationContext {
+impl Session {
 
-  pub fn new(variables: GlobalVariables) -> ExpressionEvaluationContext {
-    ExpressionEvaluationContext {
+  pub fn new() -> Session {
+    Session {
+        variables: GlobalVariables::new(),
+    }
+  }
+
+  pub fn from_record(record: &models::Record) -> Session {
+    let mut variables = GlobalVariables::new();
+    for (key, value) in record.fields.iter() {
+        variables.insert(key.clone(), value.clone());
+    }
+    Session {
+        variables,
+    }
+  }
+
+  pub fn from_record_with_context(record: &models::Record, context: &Session) -> Session {
+    let mut variables = context.clone_variables();
+    for (key, value) in record.fields.iter() {
+        variables.insert(key.clone(), value.clone());
+    }
+    Session {
         variables,
     }
   }
@@ -53,7 +73,11 @@ impl ExpressionEvaluationContext {
   }
 
   pub fn get_variable(&self, name: &str) -> Option<&DataValue> {
-    self.variables.get(name)
+    self.variables.get(name)    
+  }
+
+  pub fn set_variable(&mut self, name: &str, value: DataValue) {
+    self.variables.insert(Arc::from(name), value);
   }
 
   pub fn clone_variables(&self) -> GlobalVariables {
@@ -76,7 +100,7 @@ impl ExpressionEvaluator {
 
     pub fn evaluate_expression(
         &self,
-        context: &ExpressionEvaluationContext,
+        context: &mut Session,
         expression: &ast::Expression,
     ) -> Result<DataValue, EvaluationError> {
         match expression {
@@ -95,7 +119,7 @@ impl ExpressionEvaluator {
 
     pub fn evaluate_predicate(
         &self,
-        context: &ExpressionEvaluationContext,
+        context: &mut Session,
         expression: &ast::Expression,
     ) -> Result<bool, EvaluationError> {
         let value = self.evaluate_expression(context, expression)?;
@@ -107,7 +131,7 @@ impl ExpressionEvaluator {
 
     pub fn evaluate_projection_field(
         &self,
-        context: &ExpressionEvaluationContext,
+        context: &mut Session,
         expression: &ast::Expression,
     ) -> Result<(String, DataValue), EvaluationError> {
         let value = self.evaluate_expression(context, expression)?;
@@ -128,7 +152,7 @@ impl ExpressionEvaluator {
 
     fn evaluate_unary_expression(
         &self,
-        context: &ExpressionEvaluationContext,
+        context: &mut Session,
         expression: &ast::UnaryExpression,
     ) -> Result<DataValue, EvaluationError> {
         let result = match expression {
@@ -192,7 +216,7 @@ impl ExpressionEvaluator {
 
     fn evaluate_binary_expression(
         &self,
-        context: &ExpressionEvaluationContext,
+        context: &mut Session,
         expression: &ast::BinaryExpression,
     ) -> Result<DataValue, EvaluationError> {
         let result = match expression {
@@ -343,7 +367,7 @@ impl ExpressionEvaluator {
 
     fn evaluate_function_expression(
         &self,
-        context: &ExpressionEvaluationContext,
+        context: &mut Session,
         expression: &ast::FunctionExpression,
     ) -> Result<DataValue, EvaluationError> {
         
